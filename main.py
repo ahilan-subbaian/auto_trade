@@ -9,6 +9,8 @@ from alpaca.trading.requests import MarketOrderRequest, GetCalendarRequest
 from alpaca.trading.enums import OrderSide, TimeInForce
 import datetime
 import yfinance
+from tenacity import retry, stop_after_attempt
+
 
 CONSTANTS = {
     "NOTIONAL" : {
@@ -32,13 +34,26 @@ secretKey = os.getenv("SECRET_KEY_LIVE")
 # initialize trading client
 client = TradingClient(apiKey, secretKey)
 
+# method to use with tenacity to retry if API call fails
+@retry(stop=stop_after_attempt(3))
+def submit_order_with_retry(client, order):
+    client.submit_order(order)
+
+@retry(stop=stop_after_attempt(3))
+def get_calendar_with_retry(client, calendar_request):
+    return client.get_calendar(calendar_request)
+
+@retry(stop=stop_after_attempt(3))
+def fetch_price_with_retry(ticker):
+    return yfinance.Ticker(ticker).history(period="1d")["Close"][0]
+
 # check if today is the last open day of the week
 start = end = datetime.datetime.today()
 while end != 4:
     end += datetime.timedelta(days=1)
 
 calendar = GetCalendarRequest(start=start, end=end)
-calendar = client.get_calendar(calendar)
+calendar = get_calendar_with_retry(client, calendar)
 
 # if today is the last open day of the week
 if len(calendar) > 0 and calendar[-1].date == start:
@@ -57,7 +72,7 @@ if len(calendar) > 0 and calendar[-1].date == start:
     
     # quantity trades
     for ticker in CONSTANTS["QTY"]:
-        last_price = yfinance.Ticker(ticker).history(period="1d")["Close"][0]
+        last_price = fetch_price_with_retry(ticker)
         shares = CONSTANTS["QTY"][ticker] * CONSTANTS["AMOUNT"] / last_price
         shares = int(shares + 0.5)
         order = MarketOrderRequest(
