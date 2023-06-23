@@ -35,22 +35,21 @@ secretKey = os.getenv("SECRET_KEY_LIVE")
 client = TradingClient(apiKey, secretKey)
 
 # method to use with tenacity to retry if API call fails
-@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
+# @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
 def submit_order_with_retry(client, order):
     client.submit_order(order)
 
-@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
+# @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
 def get_calendar_with_retry(client, calendar_request):
     return client.get_calendar(calendar_request)
 
-@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
+# @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
 def fetch_price_with_retry(ticker):
     return yfinance.Ticker(ticker).history(period="1d")["Close"][0]
 
 # check if today is the last open day of the week
 start = end = datetime.datetime.today()
-while end != 4:
-    end += datetime.timedelta(days=1)
+end += datetime.timedelta(days=2)
 
 calendar = GetCalendarRequest(start=start, end=end)
 calendar = get_calendar_with_retry(client, calendar)
