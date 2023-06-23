@@ -9,7 +9,7 @@ from alpaca.trading.requests import MarketOrderRequest, GetCalendarRequest
 from alpaca.trading.enums import OrderSide, TimeInForce
 import datetime
 import yfinance
-from tenacity import retry, stop_after_attempt
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 
 CONSTANTS = {
@@ -35,15 +35,15 @@ secretKey = os.getenv("SECRET_KEY_LIVE")
 client = TradingClient(apiKey, secretKey)
 
 # method to use with tenacity to retry if API call fails
-@retry(stop=stop_after_attempt(3))
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
 def submit_order_with_retry(client, order):
     client.submit_order(order)
 
-@retry(stop=stop_after_attempt(3))
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
 def get_calendar_with_retry(client, calendar_request):
     return client.get_calendar(calendar_request)
 
-@retry(stop=stop_after_attempt(3))
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
 def fetch_price_with_retry(ticker):
     return yfinance.Ticker(ticker).history(period="1d")["Close"][0]
 
