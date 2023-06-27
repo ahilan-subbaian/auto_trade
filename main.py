@@ -53,8 +53,12 @@ end += datetime.timedelta(days=2)
 calendar = GetCalendarRequest(start=start, end=end)
 calendar = get_calendar_with_retry(client, calendar)
 
+print(f"Calendar: {calendar}")
+
 # if today is the last open day of the week
 if len(calendar) > 0 and calendar[-1].date == start:
+
+    print("Today is the last open day of the week.")
 
     # start making trades
 
@@ -67,6 +71,7 @@ if len(calendar) > 0 and calendar[-1].date == start:
             time_in_force=TimeInForce.DAY,
         )
         client.submit_order(order)
+        print(f"Submitted order for {ticker}.")
     
     # quantity trades
     for ticker in CONSTANTS["QTY"]:
@@ -80,6 +85,7 @@ if len(calendar) > 0 and calendar[-1].date == start:
             time_in_force=TimeInForce.DAY,
         )
         client.submit_order(order)
+        print(f"Submitted order for {ticker}.")
 else:
     print("Not the last open day of the week.")
 
