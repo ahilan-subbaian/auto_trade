@@ -1,6 +1,4 @@
-dotenv
-os
+python-dotenv
 alpaca-py
-datetime
 yfinance
 tenacity

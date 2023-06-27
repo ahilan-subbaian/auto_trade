@@ -1,6 +1,3 @@
-# Auto trades stocks on the last open day of 
-# the week. Uses Alpaca API to process trades.
-
 # import libraries
 from dotenv import load_dotenv
 import os
@@ -24,15 +21,6 @@ CONSTANTS = {
     "AMOUNT" : 100,
 }
 
-# load environment variables based on paper/live trading
-load_dotenv()
-
-apiKey = os.getenv("API_KEY")
-secretKey = os.getenv("SECRET_KEY")
-
-# initialize trading client
-client = TradingClient(apiKey, secretKey, paper=False)
-
 # method to use with tenacity to retry if API call fails
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
 def submit_order_with_retry(client, order):
@@ -46,46 +34,55 @@ def get_calendar_with_retry(client, calendar_request):
 def fetch_price_with_retry(ticker):
     return yfinance.Ticker(ticker).history(period="1d")["Close"][0]
 
-# check if today is the last open day of the week
-start = end = datetime.datetime.today().date()
-end += datetime.timedelta(days=2)
+def handler(event, context):
+    # load environment variables based on paper/live trading
+    load_dotenv()
 
-calendar = GetCalendarRequest(start=start, end=end)
-calendar = get_calendar_with_retry(client, calendar)
+    apiKey = os.getenv("API_KEY")
+    secretKey = os.getenv("SECRET_KEY")
 
-print(f"Calendar: {calendar}")
+    # initialize trading client
+    client = TradingClient(apiKey, secretKey, paper=False)
 
-# if today is the last open day of the week
-if len(calendar) > 0 and calendar[-1].date == start:
+    # check if today is the last open day of the week
+    start = end = datetime.datetime.today().date()
+    end += datetime.timedelta(days=2)
 
-    print("Today is the last open day of the week.")
+    calendar = GetCalendarRequest(start=start, end=end)
+    calendar = get_calendar_with_retry(client, calendar)
 
-    # start making trades
+    print("Calendar: ", calendar)
 
-    # notional trades
-    for ticker in CONSTANTS["NOTIONAL"]:
-        order = MarketOrderRequest(
-            symbol=ticker,
-            notional=CONSTANTS["NOTIONAL"][ticker] * CONSTANTS["AMOUNT"],
-            side=OrderSide.BUY,
-            time_in_force=TimeInForce.DAY,
-        )
-        client.submit_order(order)
-        print(f"Submitted order for {ticker}.")
-    
-    # quantity trades
-    for ticker in CONSTANTS["QTY"]:
-        last_price = fetch_price_with_retry(ticker)
-        shares = CONSTANTS["QTY"][ticker] * CONSTANTS["AMOUNT"] / last_price
-        shares = int(shares + 0.5)
-        order = MarketOrderRequest(
-            symbol=ticker,
-            qty=shares,
-            side=OrderSide.BUY,
-            time_in_force=TimeInForce.DAY,
-        )
-        client.submit_order(order)
-        print(f"Submitted order for {ticker}.")
-else:
-    print("Not the last open day of the week.")
+    # if today is the last open day of the week
+    if len(calendar) > 0 and calendar[-1].date == start:
+        print("Today is the last open day of the week.")
 
+        # start making trades
+
+        # notional trades
+        for ticker in CONSTANTS["NOTIONAL"]:
+            order = MarketOrderRequest(
+                symbol=ticker,
+                notional=CONSTANTS["NOTIONAL"][ticker] * CONSTANTS["AMOUNT"],
+                side=OrderSide.BUY,
+                time_in_force=TimeInForce.DAY,
+            )
+            submit_order_with_retry(client, order)
+            print("Order submitted for: ", ticker)
+        
+        # quantity trades
+        for ticker in CONSTANTS["QTY"]:
+            last_price = fetch_price_with_retry(ticker)
+            shares = CONSTANTS["QTY"][ticker] * CONSTANTS["AMOUNT"] / last_price
+            shares = int(shares + 0.5)
+            print("Ticker: ", ticker, "Shares: ", shares)
+            order = MarketOrderRequest(
+                symbol=ticker,
+                qty=shares,
+                side=OrderSide.BUY,
+                time_in_force=TimeInForce.DAY,
+            )
+            submit_order_with_retry(client, order)
+            print("Order submitted for: ", ticker)
+    else:
+        print("Not the last open day of the week.")
