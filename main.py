@@ -27,8 +27,8 @@ CONSTANTS = {
 # load environment variables based on paper/live trading
 load_dotenv()
 
-apiKey = os.getenv("API_KEY_LIVE")
-secretKey = os.getenv("SECRET_KEY_LIVE")
+apiKey = os.getenv("API_KEY")
+secretKey = os.getenv("SECRET_KEY")
 
 # initialize trading client
 client = TradingClient(apiKey, secretKey, paper=False)
@@ -80,4 +80,6 @@ if len(calendar) > 0 and calendar[-1].date == start:
             time_in_force=TimeInForce.DAY,
         )
         client.submit_order(order)
+else:
+    print("Not the last open day of the week.")
 

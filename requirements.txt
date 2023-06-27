@@ -1,0 +1,6 @@
+dotenv
+os
+alpaca-py
+datetime
+yfinance
+tenacity
