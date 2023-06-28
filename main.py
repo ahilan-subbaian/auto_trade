@@ -34,7 +34,7 @@ def get_calendar_with_retry(client, calendar_request):
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
 def fetch_price_with_retry(ticker, broker):
     return broker.get_stock_latest_quote(
-                    StockLatestQuoteRequest(symbol_or_symbols=symbol))[symbol].bid_price
+                    StockLatestQuoteRequest(symbol_or_symbols=ticker))[ticker].bid_price
 
 def handler(event, context):
     # load environment variables based on paper/live trading
