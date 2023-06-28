@@ -1,11 +1,12 @@
 # import libraries
 from dotenv import load_dotenv
 import os
+from alpaca.data.historical import StockHistoricalDataClient
 from alpaca.trading.client import TradingClient
+from alpaca.data.requests import StockLatestQuoteRequest
 from alpaca.trading.requests import MarketOrderRequest, GetCalendarRequest
 from alpaca.trading.enums import OrderSide, TimeInForce
 import datetime
-import yfinance
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 
@@ -31,8 +32,9 @@ def get_calendar_with_retry(client, calendar_request):
     return client.get_calendar(calendar_request)
 
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
-def fetch_price_with_retry(ticker):
-    return yfinance.Ticker(ticker).history(period="1d")["Close"][0]
+def fetch_price_with_retry(ticker, broker):
+    return broker.get_stock_latest_quote(
+                    StockLatestQuoteRequest(symbol_or_symbols=symbol))[symbol].bid_price
 
 def handler(event, context):
     # load environment variables based on paper/live trading
@@ -43,6 +45,7 @@ def handler(event, context):
 
     # initialize trading client
     client = TradingClient(apiKey, secretKey, paper=False)
+    broker = StockHistoricalDataClient(api_key=apiKey, secret_key=secretKey)
 
     # check if today is the last open day of the week
     start = end = datetime.datetime.today().date()
