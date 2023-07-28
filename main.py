@@ -34,7 +34,7 @@ def get_calendar_with_retry(client, calendar_request):
     return client.get_calendar(calendar_request)
 
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
-def fetch_price_with_retry(ticker, broker):
+def fetch_price_with_retry(broker, ticker):
     print("Fetching price for: ", ticker)
     return broker.get_stock_latest_quote(
                     StockLatestQuoteRequest(symbol_or_symbols=ticker))[ticker].bid_price
@@ -64,31 +64,33 @@ def handler(event, context):
         print("Today is the last open day of the week.")
 
         # start making trades
-
-        # notional trades
-        for ticker in CONSTANTS["NOTIONAL"]:
-            order = MarketOrderRequest(
-                symbol=ticker,
-                notional=CONSTANTS["NOTIONAL"][ticker] * CONSTANTS["AMOUNT"],
-                side=OrderSide.BUY,
-                time_in_force=TimeInForce.DAY,
-            )
-            submit_order_with_retry(client, order)
-            print("Order submitted for: ", ticker)
-        
-        # quantity trades
-        for ticker in CONSTANTS["QTY"]:
-            last_price = fetch_price_with_retry(ticker)
-            shares = CONSTANTS["QTY"][ticker] * CONSTANTS["AMOUNT"] / last_price
-            shares = int(shares + 0.5)
-            print("Ticker: ", ticker, "Shares: ", shares)
-            order = MarketOrderRequest(
-                symbol=ticker,
-                qty=shares,
-                side=OrderSide.BUY,
-                time_in_force=TimeInForce.DAY,
-            )
-            submit_order_with_retry(client, order)
-            print("Order submitted for: ", ticker)
+        try:
+            # notional trades
+            for ticker in CONSTANTS["NOTIONAL"]:
+                order = MarketOrderRequest(
+                    symbol=ticker,
+                    notional=CONSTANTS["NOTIONAL"][ticker] * CONSTANTS["AMOUNT"],
+                    side=OrderSide.BUY,
+                    time_in_force=TimeInForce.DAY,
+                )
+                submit_order_with_retry(client, order)
+                print("Order submitted for: ", ticker)
+            
+            # quantity trades
+            for ticker in CONSTANTS["QTY"]:
+                last_price = fetch_price_with_retry(broker, ticker)
+                shares = CONSTANTS["QTY"][ticker] * CONSTANTS["AMOUNT"] / last_price
+                shares = int(shares + 0.5)
+                print("Ticker: ", ticker, "Shares: ", shares)
+                order = MarketOrderRequest(
+                    symbol=ticker,
+                    qty=shares,
+                    side=OrderSide.BUY,
+                    time_in_force=TimeInForce.DAY,
+                )
+                submit_order_with_retry(client, order)
+                print("Order submitted for: ", ticker)
+        except Exception as e:
+            print("Exception: ", e)
     else:
         print("Not the last open day of the week.")
