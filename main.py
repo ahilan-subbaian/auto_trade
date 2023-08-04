@@ -19,7 +19,7 @@ CONSTANTS = {
     "QTY" : {
         "PTY": .15,
     },
-    "AMOUNT" : 100,
+    "AMOUNT" : 1200,
 }
 
 # method to use with tenacity to retry if API call fails
