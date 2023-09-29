@@ -65,6 +65,8 @@ def handler(event, context):
     if cash < CONSTANTS["AMOUNT"]:
         CONSTANTS["AMOUNT"] = min(CONSTANTS["AMOUNT"], cash - 1)
         logging.error("Not enough cash to make trades. Amount changed to: ", CONSTANTS["AMOUNT"])
+    elif cash < CONSTANTS["AMOUNT"] * 2:
+        logging.error("Not enough cash to make trades next week. Please deoposit more cash.")
 
     # if today is the last open day of the week
     if len(calendar) > 0 and calendar[-1].date == start:
