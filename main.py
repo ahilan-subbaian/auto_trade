@@ -61,7 +61,7 @@ def handler(event, context):
     print("Calendar: ", calendar)
 
     # make sure we have enough cash to make trades
-    cash = int(client.get_account().cash)
+    cash = float(client.get_account().cash)
     if cash < CONSTANTS["AMOUNT"]:
         CONSTANTS["AMOUNT"] = min(CONSTANTS["AMOUNT"], cash - 1)
         logging.error("Not enough cash to make trades. Amount changed to: ", CONSTANTS["AMOUNT"])
