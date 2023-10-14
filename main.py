@@ -13,12 +13,9 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 
 CONSTANTS = {
     "NOTIONAL": {
-        "VTI": 0.40,
-        "VXUS": 0.20,
-        "VGT": 0.25,
-    },
-    "QTY": {
-        "PTY": 0.15,
+        "VTI": 0.45,
+        "VXUS": 0.25,
+        "VGT": 0.30,
     },
     "AMOUNT": 1500,
 }
